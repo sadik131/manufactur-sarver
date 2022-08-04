@@ -19,20 +19,20 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 // const client = new MongoClient(uri);
 // console.log(uri);
 
-const varyfyJWT = (req , res , next) =>{
+const varyfyJWT = (req, res, next) => {
     const authorization = req.headers.authorization
-    if(!authorization){
-    return res.status(401).send({message:"Unauthorization Access"})
+    if (!authorization) {
+        return res.status(401).send({ message: "Unauthorization Access" })
     }
     const token = authorization.split(' ')[1]
-    jwt.verify(token, process.env.Access_token, function(err, decoded) {
-        if(err){
-            return res.status(403).send({message:"Forbidden Access"})
+    jwt.verify(token, process.env.Access_token, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: "Forbidden Access" })
         }
         res.decoded = decoded
         console.log(decoded.email);
         next()
-      });
+    });
 }
 
 async function run() {
@@ -79,22 +79,48 @@ async function run() {
             const filter = { email: email }
             const options = { upsert: true };
             const updateDoc = {
-                $set:user
-              };
-            const result = await userCollection.updateOne(filter , updateDoc ,options)
-            const token = jwt.sign({ email }, process.env.Access_token,{ expiresIn: '1h' })
+                $set: user
+            };
+            const result = await userCollection.updateOne(filter, updateDoc, options)
+            const token = jwt.sign({ email }, process.env.Access_token, { expiresIn: '1h' })
 
-            res.send({result, token})
+            res.send({ result, token })
+        });
+
+        //user to admin
+        app.patch('/user/admin/:email',varyfyJWT, async (req, res) => {
+            const email = req.params.email
+            console.log("decoded",req.decoded);
+            const filter = { email: email }
+            const updateDoc = {
+                $set: { roll: 'admin' }
+            };
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.send(result)
         });
 
         //get the all user
 
-        app.get('/user',varyfyJWT, async(req , res)=>{
+        app.get('/user', varyfyJWT, async (req, res) => {
             const result = await userCollection.find().toArray()
-            console.log("find decoded",req.decoded);
-            console.log(req)
             res.send(result)
         });
+
+        //load spacifik user order data
+        app.get('/order', async (req, res) => {
+            const user = {email : req.query.user}
+            console.log(user)
+            const result = await productCollection.find(user).toArray()
+            res.send(result)
+
+        });
+
+        app.delete('/delete/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = {_id : ObjectId(id)}
+            const result = await userCollection.deleteOne(filter)
+            res.send(result)
+        })
 
     }
     finally {
