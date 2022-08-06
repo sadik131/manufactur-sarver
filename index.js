@@ -30,7 +30,6 @@ const varyfyJWT = (req, res, next) => {
             return res.status(403).send({ message: "Forbidden Access" })
         }
         res.decoded = decoded
-        console.log(decoded.email);
         next()
     });
 }
@@ -43,6 +42,7 @@ async function run() {
         const toolCollection = client.db("manufacture").collection("tools");
         const productCollection = client.db("manufacture").collection("product");
         const userCollection = client.db("manufacture").collection("users");
+        const revewCollection = client.db("manufacture").collection("review");
 
         //get all tool
         app.get("/tool", async (req, res) => {
@@ -58,6 +58,13 @@ async function run() {
             const result = await toolCollection.findOne(quary)
             res.send(result)
         });
+
+        //insert a new tool in web
+        app.post('/tool' ,varyfyJWT, async(req , res) =>{
+            const data = req.body
+            const result = await toolCollection.insertOne(data)
+            res.send({result , message:"Product Add Successfully"})
+        })
 
         //insert a data
         app.post('/product', async (req, res) => {
@@ -90,7 +97,6 @@ async function run() {
         //user to admin
         app.patch('/user/admin/:email',varyfyJWT, async (req, res) => {
             const email = req.params.email
-            console.log("decoded",req.decoded);
             const filter = { email: email }
             const updateDoc = {
                 $set: { roll: 'admin' }
@@ -98,6 +104,14 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc)
             res.send(result)
         });
+
+        //varyfy admin
+        app.get('/admin/:id',varyfyJWT, async(req , res ) =>{
+            const email = req.params.id
+            const admin = await userCollection.findOne({email:email})
+            const isAdmin = admin.roll === "admin"
+            res.send({admin:isAdmin})
+        })
 
         //get the all user
 
@@ -107,9 +121,8 @@ async function run() {
         });
 
         //load spacifik user order data
-        app.get('/order', async (req, res) => {
+        app.get('/order',varyfyJWT, async (req, res) => {
             const user = {email : req.query.user}
-            console.log(user)
             const result = await productCollection.find(user).toArray()
             res.send(result)
 
@@ -119,6 +132,19 @@ async function run() {
             const id = req.params.id
             const filter = {_id : ObjectId(id)}
             const result = await userCollection.deleteOne(filter)
+            res.send(result)
+        });
+        
+        //add user Review
+        app.post('/revew',varyfyJWT ,async(req , res ) =>{
+            const review = req.body
+            const result = await revewCollection.insertOne(review)
+            res.send({result , message:"your review add Successfully"})
+        })
+
+        //get all revew
+        app.get('/revew', async(req , res) =>{
+            const result = await revewCollection.find().toArray()
             res.send(result)
         })
 
