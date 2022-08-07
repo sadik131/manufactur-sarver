@@ -158,7 +158,7 @@ run().catch(console.dir)
 
 
 app.get("/", (req, res) => {
-    res.send("Manufacturing")
+    res.send("Manufacturing sarver is running")
 })
 
 app.listen(port, () => {
