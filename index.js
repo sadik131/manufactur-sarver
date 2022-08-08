@@ -63,14 +63,14 @@ async function run() {
         app.post('/tool' ,varyfyJWT, async(req , res) =>{
             const data = req.body
             const result = await toolCollection.insertOne(data)
-            res.send({result , message:"Product Add Successfully"})
+            res.send({result , message:`${data.name} Add Successfully`})
         })
 
         //insert a data
         app.post('/product', async (req, res) => {
             const product = req.body
             const result = await productCollection.insertOne(product)
-            res.send(result)
+            res.send({result })
         });
 
         // get all product detals
@@ -139,12 +139,21 @@ async function run() {
         app.post('/revew',varyfyJWT ,async(req , res ) =>{
             const review = req.body
             const result = await revewCollection.insertOne(review)
-            res.send({result , message:"your review add Successfully"})
-        })
+            res.send({result , message:`Your review add Successfully ${review}`})
+        });
 
         //get all revew
         app.get('/revew', async(req , res) =>{
             const result = await revewCollection.find().toArray()
+            res.send(result)
+        });
+
+        //get the spacifik payment data
+
+        app.get('/payment/:id' ,varyfyJWT, async(req , res) =>{
+            const id = req.params.id
+            const filter = {_id:ObjectId(id)}
+            const result = await productCollection.findOne(filter)
             res.send(result)
         })
 
